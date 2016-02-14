@@ -13,8 +13,8 @@
   pdf->Page[0]->Rect(90,90,200,140);
   pdf->FontSize = 22;
   pdf->CurrentFont = "F1";
-  pdf->Page[0]->Text(100,200,"абвгдежзийклмнопрстуфхцчшщыъьэюя");
-  pdf->Page[0]->Text(100,150,"АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЪЬЭЮЯ");
+  pdf->Page[0]->Text(100,200,"Ð°Ð±Ð²Ð³Ð´ÐµÐ¶Ð·Ð¸Ð¹ÐºÐ»Ð¼Ð½Ð¾Ð¿Ñ€ÑÑ‚ÑƒÑ„Ñ…Ñ†Ñ‡ÑˆÑ‰Ñ‹ÑŠÑŒÑÑŽÑ");
+  pdf->Page[0]->Text(100,150,"ÐÐ‘Ð’Ð“Ð”Ð•Ð–Ð—Ð˜Ð™ÐšÐ›ÐœÐÐžÐŸÐ Ð¡Ð¢Ð£Ð¤Ð¥Ð¦Ð§Ð¨Ð©Ð«ÐªÐ¬Ð­Ð®Ð¯");
   pdf->LineWidth = 5;
   pdf->Page[0]->Line(100,300,100,500);
   pdf->SaveToFile("C:\\test1.pdf");
@@ -88,6 +88,7 @@ class CSimplePdf{
   unsigned long FillColor;
   int FontSize;
   AnsiString CurrentFont;
+  int TextWidth(AnsiString);  
   __property CPage * Page[int index] = {read=_GetPage};
   __property int PageCount = {read=_GetPageCount};
   void AddPage(double Width=612,double Height=792);
@@ -100,4 +101,3 @@ class CSimplePdf{
   void EmbedFont(AnsiString name,AnsiString fname);
   void SaveToFile(AnsiString fname);
 };
- 
