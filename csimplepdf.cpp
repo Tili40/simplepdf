@@ -13,8 +13,8 @@
   pdf->Page[0]->Rect(90,90,200,140);
   pdf->FontSize = 22;
   pdf->CurrentFont = "F1";
-  pdf->Page[0]->Text(100,200,"абвгдежзийклмнопрстуфхцчшщыъьэюя");
-  pdf->Page[0]->Text(100,150,"АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЪЬЭЮЯ");
+  pdf->Page[0]->Text(100,200,"Ð°Ð±Ð²Ð³Ð´ÐµÐ¶Ð·Ð¸Ð¹ÐºÐ»Ð¼Ð½Ð¾Ð¿Ñ€ÑÑ‚ÑƒÑ„Ñ…Ñ†Ñ‡ÑˆÑ‰Ñ‹ÑŠÑŒÑÑŽÑ");
+  pdf->Page[0]->Text(100,150,"ÐÐ‘Ð’Ð“Ð”Ð•Ð–Ð—Ð˜Ð™ÐšÐ›ÐœÐÐžÐŸÐ Ð¡Ð¢Ð£Ð¤Ð¥Ð¦Ð§Ð¨Ð©Ð«ÐªÐ¬Ð­Ð®Ð¯");
   pdf->LineWidth = 5;
   pdf->Page[0]->Line(100,300,100,500);
   pdf->SaveToFile("C:\\test1.pdf");
@@ -1075,7 +1075,7 @@ class CTTFParser{
   };
   class CSimplePdf::CFontTTF: public CObj{
     private:
-    int Widths[0x100];
+
     AnsiString BaseFont;
     AnsiString WidthsStr(){
       AnsiString st;
@@ -1084,6 +1084,7 @@ class CTTFParser{
       return st;
     }
     public:
+    int Widths[0x100];
     AnsiString Name;
     CFontDiff * Encoding;
     CFontDescriptor * Descriptor;
@@ -1201,14 +1202,21 @@ class CTTFParser{
   }
   void CSimplePdf::SaveToFile(AnsiString fname){
     _out("%PDF-1.3");
-    _out("");
+    _out("");        try{
     for(unsigned int a=0;a<Objects.size();a++){
+
       Objects[a]->xref = buffer.Length();
       _out((AnsiString)(a+1)+" 0 obj");
       _out(Objects[a]->AsString());
       _out("endobj");
       _out("");
-    }
+
+    }        }catch(Exception * e){
+        MessageBox(NULL,
+        AnsiString((AnsiString)
+          " "+e->Message).c_str(),"",0
+        );
+      }
     int startxref = buffer.Length();
     _out("xref");
     _out((AnsiString)"0 "+(Objects.size()+1));
@@ -1266,4 +1274,20 @@ class CTTFParser{
     AnsiString CSimplePdf::CPage::AsString(){
       return (AnsiString)"<< /Type /Page /Parent 2 0 R /Resources << /Font << "+FontsString()+">> >>  /Contents "+
        Contents->ObjectID()+" 0 R >> ";
+    }
+
+    int CSimplePdf::TextWidth(AnsiString st){
+      CFontTTF * f = NULL;
+      for(unsigned int a = 0;a<Objects.size();a++)
+        if(Objects[a]->Type()=='T')
+          if(((CFontTTF *)Objects[a])->Name==CurrentFont)
+            f = (CFontTTF *)Objects[a];
+      if(!f)
+        return 0; // Should not be
+      int w = 0;
+      for(int a=1;a<=st.Length();a++){
+        char c = st[a];
+        w = w+f->Widths[c];
+      }
+      return w*FontSize/1000;
     }
