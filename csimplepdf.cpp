@@ -1,34 +1,9 @@
 /*
-   CSimplePdf - class for created simple .pdf files
-   Tested for Borland C Builder 6.0
+  CSimplePdf - class for created simple .pdf files for Borland C Builder 6.0
+  https://github.com/podoroges/simplepdf
 
-  ///////// Usage Example: ////////////////
-  CSimplePdf * pdf = new CSimplePdf();
-  pdf->EmbedFont("F1","c:\\Home\\Temp\\PdfTest2\\aricyr.ttf");
-  pdf->EmbedFont("F2","c:\\Home\\Temp\\PdfTest2\\calligra.ttf");
-  pdf->AddPage(800,600);
-  pdf->CurrentFont = "F2";
-  pdf->FontSize = 25;
-  pdf->Page[0]->Text(100,100,"Hello!");
-  pdf->Page[0]->Rect(90,90,200,140);
-  pdf->FontSize = 22;
-  pdf->CurrentFont = "F1";
-  pdf->Page[0]->Text(100,200,"Ð°Ð±Ð²Ð³Ð´ÐµÐ¶Ð·Ð¸Ð¹ÐºÐ»Ð¼Ð½Ð¾Ð¿Ñ€ÑÑ‚ÑƒÑ„Ñ…Ñ†Ñ‡ÑˆÑ‰Ñ‹ÑŠÑŒÑÑŽÑ");
-  pdf->Page[0]->Text(100,150,"ÐÐ‘Ð’Ð“Ð”Ð•Ð–Ð—Ð˜Ð™ÐšÐ›ÐœÐÐžÐŸÐ Ð¡Ð¢Ð£Ð¤Ð¥Ð¦Ð§Ð¨Ð©Ð«ÐªÐ¬Ð­Ð®Ð¯");
-  pdf->LineWidth = 5;
-  pdf->Page[0]->Line(100,300,100,500);
-  pdf->SaveToFile("C:\\test1.pdf");
-  delete pdf;
-  ////////////////////////////
+  19 Feb 16 - added maxwidth for CSimplePdf::CPage::Text
 
-  Class CTTFParser based on ttfparser.php and makefont.php
-  by Olivier PLATHEY http://www.fpdf.org
-
-  Converted to Borland C++ Builder class
-  by Podoroges http://podoroges.livejournal.com
-
-  Created solely for cp1251 cyrillic encoding
-  Please feel free to modify it for your needs
 */
 
 #include "csimplepdf.h"
@@ -1202,7 +1177,7 @@ class CTTFParser{
   }
   void CSimplePdf::SaveToFile(AnsiString fname){
     _out("%PDF-1.3");
-    _out("");        try{
+    _out("");
     for(unsigned int a=0;a<Objects.size();a++){
 
       Objects[a]->xref = buffer.Length();
@@ -1211,12 +1186,7 @@ class CTTFParser{
       _out("endobj");
       _out("");
 
-    }        }catch(Exception * e){
-        MessageBox(NULL,
-        AnsiString((AnsiString)
-          " "+e->Message).c_str(),"",0
-        );
-      }
+    }
     int startxref = buffer.Length();
     _out("xref");
     _out((AnsiString)"0 "+(Objects.size()+1));
@@ -1267,9 +1237,18 @@ class CTTFParser{
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q %.2f w %.2f %.2f m %.2f %.2f l S Q\n",parent->LineWidth,x1,y1,x2,y2);
     }
-    void CSimplePdf::CPage::Text(double x1,double y1,AnsiString st){
+    void CSimplePdf::CPage::Text(double x1,double y1,AnsiString st,double maxwidth){
+      int len = st.Length();
+      if(maxwidth>0){
+        len = 0;
+        for(int a=1;a<st.Length();a++)
+          if(parent->TextWidth(st.SubString(1,a))<maxwidth)
+            len = a;
+          else
+            a = st.Length();
+      }
       Contents->Contents = (AnsiString)Contents->Contents
-        +AnsiString().sprintf("q BT 0 0 0 rg /%s %i Tf %.2f %.2f Td ( ",parent->CurrentFont.c_str(),parent->FontSize,x1,y1)+st+" ) Tj ET Q\n";
+        +AnsiString().sprintf("q BT 0 0 0 rg /%s %i Tf %.2f %.2f Td ( ",parent->CurrentFont.c_str(),parent->FontSize,x1,y1)+st.SubString(1,len)+" ) Tj ET Q\n";
     }
     AnsiString CSimplePdf::CPage::AsString(){
       return (AnsiString)"<< /Type /Page /Parent 2 0 R /Resources << /Font << "+FontsString()+">> >>  /Contents "+

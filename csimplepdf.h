@@ -1,6 +1,6 @@
 /*
-   CSimplePdf - class for created simple .pdf files
-   Tested for Borland C Builder 6.0
+  CSimplePdf - class for created simple .pdf files for Borland C Builder 6.0
+  https://github.com/podoroges/simplepdf
 
   ///////// Usage Example: ////////////////
   CSimplePdf * pdf = new CSimplePdf();
@@ -13,8 +13,8 @@
   pdf->Page[0]->Rect(90,90,200,140);
   pdf->FontSize = 22;
   pdf->CurrentFont = "F1";
-  pdf->Page[0]->Text(100,200,"Ð°Ð±Ð²Ð³Ð´ÐµÐ¶Ð·Ð¸Ð¹ÐºÐ»Ð¼Ð½Ð¾Ð¿Ñ€ÑÑ‚ÑƒÑ„Ñ…Ñ†Ñ‡ÑˆÑ‰Ñ‹ÑŠÑŒÑÑŽÑ");
-  pdf->Page[0]->Text(100,150,"ÐÐ‘Ð’Ð“Ð”Ð•Ð–Ð—Ð˜Ð™ÐšÐ›ÐœÐÐžÐŸÐ Ð¡Ð¢Ð£Ð¤Ð¥Ð¦Ð§Ð¨Ð©Ð«ÐªÐ¬Ð­Ð®Ð¯");
+  pdf->Page[0]->Text(100,200,"QWERTY");
+  pdf->Page[0]->Text(100,150,"ZXCVBN");
   pdf->LineWidth = 5;
   pdf->Page[0]->Line(100,300,100,500);
   pdf->SaveToFile("C:\\test1.pdf");
@@ -69,7 +69,7 @@ class CSimplePdf{
     void Rect(double x1,double y1,double x2,double y2);
     void FillRect(double x1,double y1,double x2,double y2);    
     void Line(double x1,double y1,double x2,double y2);
-    void Text(double x1,double y1,AnsiString st);
+    void Text(double x1,double y1,AnsiString st,double maxwidth = -1);
     AnsiString AsString();
     char Type(){
       return 'P';
