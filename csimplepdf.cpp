@@ -1241,7 +1241,7 @@ class CTTFParser{
       int len = st.Length();
       if(maxwidth>0){
         len = 0;
-        for(int a=1;a<st.Length();a++)
+        for(int a=1;a<=st.Length();a++)
           if(parent->TextWidth(st.SubString(1,a))<maxwidth)
             len = a;
           else
