@@ -3,6 +3,7 @@
   https://github.com/podoroges/simplepdf
 
   19 Feb 16 - added maxwidth for CSimplePdf::CPage::Text
+  03 Mar 16 - added CSimplePdf::CPage::ImgInline
 
 */
 
@@ -1071,7 +1072,7 @@ class CTTFParser{
         Widths[a] = p->widths[a];
     }
     ~CFontTTF(){
-      delete [] Widths;
+//      delete [] Widths;
     }
     AnsiString AsString(){
       return (AnsiString)"<< /Type /Font /Subtype /TrueType"
@@ -1179,7 +1180,6 @@ class CTTFParser{
     _out("%PDF-1.3");
     _out("");
     for(unsigned int a=0;a<Objects.size();a++){
-
       Objects[a]->xref = buffer.Length();
       _out((AnsiString)(a+1)+" 0 obj");
       _out(Objects[a]->AsString());
@@ -1219,7 +1219,7 @@ class CTTFParser{
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q %.2f w %.2f %.2f %.2f %.2f re S Q\n",parent->LineWidth,x1,y1,x2-x1,y2-y1);
     }
-    
+
     void CSimplePdf::CPage::FillRect(double x1,double y1,double x2,double y2){
       double R1 = double(GetRValue(parent->PenColor))/double(255);
       double G1 = double(GetGValue(parent->PenColor))/double(255);
@@ -1230,13 +1230,38 @@ class CTTFParser{
 
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q %.2f w %.2f %.2f %.2f RG %.2f %.2f %.2f rg %.2f %.2f %.2f %.2f re B Q\n",parent->LineWidth,R1,G1,B1,r1,g1,b1,x1,y1,x2-x1,y2-y1);
-    }    
-    
+    }
+
 
     void CSimplePdf::CPage::Line(double x1,double y1,double x2,double y2){
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q %.2f w %.2f %.2f m %.2f %.2f l S Q\n",parent->LineWidth,x1,y1,x2,y2);
     }
+
+
+    void CSimplePdf::CPage::ImgInline(AnsiString fname,double x1,double y1){
+      int W = 0;
+      int H = 0;
+      AnsiString data;
+      if(fname.LowerCase().Pos(".bmp")){
+        Graphics::TBitmap * bmp = new Graphics::TBitmap();
+        bmp->LoadFromFile(fname);
+        W = bmp->Width;
+        H = bmp->Height;
+
+        for(int j=0;j<H;j++)
+        for(int i=0;i<W;i++)
+          data = (AnsiString)data
+            +AnsiString().sprintf("%02x",GetRValue(bmp->Canvas->Pixels[i][j]))
+            +AnsiString().sprintf("%02x",GetGValue(bmp->Canvas->Pixels[i][j]))
+            +AnsiString().sprintf("%02x",GetBValue(bmp->Canvas->Pixels[i][j]));
+
+        delete bmp;
+      }
+      Contents->Contents = (AnsiString)Contents->Contents
+        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F [/AHx] \nID\n %s \nEI\n Q\n",W,H,x1,y1,W,H,data.c_str());
+    }
+
     void CSimplePdf::CPage::Text(double x1,double y1,AnsiString st,double maxwidth){
       int len = st.Length();
       if(maxwidth>0){
