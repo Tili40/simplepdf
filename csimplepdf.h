@@ -94,9 +94,9 @@ class CSimplePdf{
   void AddPage(double Width=612,double Height=792);
   CSimplePdf();
   ~CSimplePdf(){
-    Objects.clear();
     for(unsigned int a=0;a<Objects.size();a++)
       delete Objects[a];
+    Objects.clear();
   }
   void EmbedFont(AnsiString name,AnsiString fname);
   void SaveToFile(AnsiString fname);
