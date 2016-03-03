@@ -70,6 +70,7 @@ class CSimplePdf{
     void FillRect(double x1,double y1,double x2,double y2);    
     void Line(double x1,double y1,double x2,double y2);
     void Text(double x1,double y1,AnsiString st,double maxwidth = -1);
+    void ImgInline(AnsiString,double,double);
     AnsiString AsString();
     char Type(){
       return 'P';
