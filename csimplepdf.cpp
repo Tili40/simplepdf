@@ -2,8 +2,10 @@
   CSimplePdf - class for created simple .pdf files for Borland C Builder 6.0
   https://github.com/podoroges/simplepdf
 
-  19 Feb 16 - added maxwidth for CSimplePdf::CPage::Text
+  14 Mar 16 - added CSimplePdf::CPage::MultilineText
   03 Mar 16 - added CSimplePdf::CPage::ImgInline
+  19 Feb 16 - added maxwidth for CSimplePdf::CPage::Text
+
 
 */
 
@@ -927,6 +929,37 @@ class CTTFParser{
 };
 
 
+AnsiString StrRep(AnsiString st,AnsiString from,AnsiString to){
+  while(st.Pos(from)){
+    int a = st.Pos(from);
+    st.Delete(a,from.Length());
+    st.Insert(to,a);
+  }
+  return st;
+}
+
+//---------------------------------------------------------------------------
+//Èçâëå÷åíèå èç ñòðîêè n-ãî ñëîâà
+//Îòñ÷åò ñ íóëÿ
+//Åñëè n áîëüøå ÷åì êîë-âî ñëîâ, âûâîäèòñÿ ïîñëåäíåå ñëîâî
+AnsiString Parm(AnsiString st,int n,AnsiString sample){
+  while(n>0){
+    st = st.Delete(1,st.Pos(sample)+sample.Length()-1);
+    n--;
+  }
+  st = st.Delete(st.Pos(sample),st.Length()-st.Pos(sample)+1);
+  return st;
+}
+//Êîëè÷åñòâî ïîäñòðîê â ñòðîêå
+int SCount(AnsiString st,AnsiString sample){
+  int a=0;
+  while(st.Pos(sample)>0){
+   st=st.Delete(st.Pos(sample),sample.Length());
+   a++;
+  }
+  return a;
+}
+//---------------------------------------------------------------------------
 
 
 
@@ -993,6 +1026,7 @@ class CTTFParser{
       char * src = new char[flen];
       fs->Read(src,flen);
       unsigned long l1 = compressBound(flen);
+//      unsigned long l1 = MZ_MAX(128 + (flen * 110) / 100, 128 + flen + ((flen / (31 * 1024)) + 1) * 5);
       char * buf = new char[l1];
       compress(buf,&l1,src,flen);
       TStringStream * s = new TStringStream("");
@@ -1147,6 +1181,7 @@ class CTTFParser{
   }
   CSimplePdf::CSimplePdf(){
     LineWidth = 1;
+    Justify = 1;
     FontSize = 1;
     Compress = 1;
     CCat * c = new CSimplePdf::CCat(this);
@@ -1176,36 +1211,47 @@ class CTTFParser{
     Objects.push_back(diff);
     delete parser;
   }
+
+  void CSimplePdf::_out(TMemoryStream * ms,AnsiString s){
+    if(s.Length()>0)
+      ms->Write(s.c_str(),s.Length());
+    AnsiString eol = "\n"; // <- I know it is bullshit, sorry...
+    ms->Write(eol.c_str(),eol.Length());
+  }
+
   void CSimplePdf::SaveToFile(AnsiString fname){
-    _out("%PDF-1.3");
-    _out("");
+    TMemoryStream * ms = new TMemoryStream();
+    _out(ms,"%PDF-1.3");
+    _out(ms,"");
     for(unsigned int a=0;a<Objects.size();a++){
-      Objects[a]->xref = buffer.Length();
-      _out((AnsiString)(a+1)+" 0 obj");
-      _out(Objects[a]->AsString());
-      _out("endobj");
-      _out("");
+      Objects[a]->xref = ms->Size;
+      _out(ms,(AnsiString)(a+1)+" 0 obj");
+      _out(ms,Objects[a]->AsString());
+      _out(ms,"endobj");
+      _out(ms,"");
 
     }
-    int startxref = buffer.Length();
-    _out("xref");
-    _out((AnsiString)"0 "+(Objects.size()+1));
-    _out("0000000000 65535 f ");
+    int startxref = ms->Size;
+    _out(ms,"xref");
+    _out(ms,(AnsiString)"0 "+(Objects.size()+1));
+    _out(ms,"0000000000 65535 f ");
     for(unsigned int a=0;a<Objects.size();a++){
-      _out(AnsiString().sprintf("%010d 00000 n",Objects[a]->xref));
+      _out(ms,AnsiString().sprintf("%010d 00000 n",Objects[a]->xref));
     }
-    _out("trailer");
-    _out("<<");
-    _out((AnsiString)"/Size "+Objects.size());
-    _out("/Root 1 0 R");
-    _out(">>");
-    _out("");
-    _out("startxref");
-    _out(startxref);
-    _out("%%EOF");
+    _out(ms,"trailer");
+    _out(ms,"<<");
+    _out(ms,(AnsiString)"/Size "+Objects.size());
+    _out(ms,"/Root 1 0 R");
+    _out(ms,">>");
+    _out(ms,"");
+    _out(ms,"startxref");
+    _out(ms,startxref);
+    _out(ms,"%%EOF");
     TFileStream * fs = new TFileStream(fname,fmCreate);
-    fs->Write(buffer.c_str(),buffer.Length());
+    fs->CopyFrom(ms,0);
+//    fs->Write(buffer.c_str(),buffer.Length());
     delete fs;
+    delete ms;
   }
 
   AnsiString CSimplePdf::CPage::FontsString(){
@@ -1259,7 +1305,7 @@ class CTTFParser{
         delete bmp;
       }
       Contents->Contents = (AnsiString)Contents->Contents
-        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F [/AHx] \nID\n %s \nEI\n Q\n",W,H,x1,y1,W,H,data.c_str());
+        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F [/AHx] ID %s EI Q\n",W,H,x1,y1,W,H,data.c_str());
     }
 
     void CSimplePdf::CPage::Text(double x1,double y1,AnsiString st,double maxwidth){
@@ -1272,9 +1318,84 @@ class CTTFParser{
           else
             a = st.Length();
       }
+
+      /*
+The strings shall conform to the syntax for string objects. When a string is written by enclosing the data in
+parentheses, bytes whose values are equal to those of the ASCII characters LEFT PARENTHESIS (28h),
+RIGHT PARENTHESIS (29h), and REVERSE SOLIDUS (5Ch) (backslash) shall be preceded by a REVERSE
+SOLIDUS) character. All other byte values between 0 and 255 may be used in a string object. These rules
+apply to each individual byte in a string object, whether the string is interpreted by the text-showing operators
+as single-byte or multiple-byte character codes.
+      */
+      if((st.Pos("("))||(st.Pos(")"))||(st.Pos("\\"))){
+        AnsiString st1 = st;
+        st = "";
+        for(int a=1;a<=st1.Length();a++){
+          if((st1[a]==40)||(st1[a]==41)||(st1[a]==92)){
+            st = (AnsiString)st+"\\";
+            len++;
+          }
+          st = (AnsiString)st+st1[a];
+        }
+      }
+
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q BT 0 0 0 rg /%s %i Tf %.2f %.2f Td ( ",parent->CurrentFont.c_str(),parent->FontSize,x1,y1)+st.SubString(1,len)+" ) Tj ET Q\n";
     }
+
+    int CSimplePdf::CPage::MultilineText(double x1,double y1,AnsiString st,double w, double h){
+      //double w = -1, double h = -1){
+      if(w<0)
+        w = Width-x1;
+      if(h<0)
+        h = parent->FontSize;
+      TStringList * str = new TStringList();
+      str->Text = st;
+      for(int a=0;a<str->Count;a++){
+        st = str->Strings[a];
+        st = StrRep(st,"  "," ").Trim();
+        int WordsCount = SCount(st," ")+1;
+        AnsiString CurrentString;
+        int CurrentWidth = 0;
+
+        for(int i=0;i<WordsCount;i++){
+          AnsiString n_word = (AnsiString)Parm(st,i," ")+" ";
+          int n_word_width = parent->TextWidth(n_word);
+          if(CurrentWidth+n_word_width<w){
+            CurrentWidth = CurrentWidth+n_word_width;
+            CurrentString = (AnsiString)CurrentString+n_word;
+          }
+          else{
+            if((parent->Justify)&&(CurrentString.Pos(" "))){
+              AnsiString js = CurrentString.Trim();
+              double jw = parent->TextWidth(StrRep(js," ",""));
+              int jc = SCount(js," ")+1;
+              double jd = (w-jw)/(double(jc)-1.0);
+              double jx = x1;
+              for(int ji=0;ji<jc;ji++){
+                Text(jx,y1,Parm(js,ji," "));
+                jx = jx+jd+parent->TextWidth(Parm(js,ji," "));
+              }
+
+            }
+            else{
+              Text(x1,y1,CurrentString);
+            }
+
+            y1 = y1 - h;
+            CurrentWidth = n_word_width;
+            CurrentString = n_word;
+          }
+        }
+        // Tail - last line before EOL
+        Text(x1,y1,CurrentString);
+        y1 = y1-h;// next line
+      }
+      delete str;
+      return y1;
+    }
+
+
     AnsiString CSimplePdf::CPage::AsString(){
       return (AnsiString)"<< /Type /Page /Parent 2 0 R /Resources << /Font << "+FontsString()+">> >>  /Contents "+
        Contents->ObjectID()+" 0 R >> ";
@@ -1290,7 +1411,7 @@ class CTTFParser{
         return 0; // Should not be
       int w = 0;
       for(int a=1;a<=st.Length();a++){
-        char c = st[a];
+        unsigned char c = st[a];
         w = w+f->Widths[c];
       }
       return w*FontSize/1000;
