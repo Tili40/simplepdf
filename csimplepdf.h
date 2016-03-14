@@ -36,7 +36,6 @@
 
 class CSimplePdf{
   private:
-  AnsiString buffer;
   class CCat;
   class CPages;
   class CFontDiff;
@@ -70,6 +69,7 @@ class CSimplePdf{
     void FillRect(double x1,double y1,double x2,double y2);    
     void Line(double x1,double y1,double x2,double y2);
     void Text(double x1,double y1,AnsiString st,double maxwidth = -1);
+    int MultilineText(double x1,double y1,AnsiString st,double w = -1, double h = -1);
     void ImgInline(AnsiString,double,double);
     AnsiString AsString();
     char Type(){
@@ -79,11 +79,10 @@ class CSimplePdf{
   friend class CPage;
   int _GetPageCount();
   CPage * _GetPage(int index);
-  void _out(AnsiString s){
-    buffer = (AnsiString)buffer+s+"\n";
-  }
+  void _out(TMemoryStream *,AnsiString);
   public:
   int Compress;
+  int Justify;
   double LineWidth;
   unsigned long PenColor;
   unsigned long FillColor;
