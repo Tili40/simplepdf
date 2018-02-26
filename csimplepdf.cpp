@@ -2,6 +2,7 @@
   CSimplePdf - class for created simple .pdf files for Borland C Builder 6.0
   https://github.com/podoroges/simplepdf
 
+  26 Feb 18 - added MediaBox for CSimplePdf::CPage::AsString
   14 Mar 16 - added CSimplePdf::CPage::MultilineText
   03 Mar 16 - added CSimplePdf::CPage::ImgInline
   19 Feb 16 - added maxwidth for CSimplePdf::CPage::Text
@@ -1397,7 +1398,7 @@ as single-byte or multiple-byte character codes.
 
 
     AnsiString CSimplePdf::CPage::AsString(){
-      return (AnsiString)"<< /Type /Page /Parent 2 0 R /Resources << /Font << "+FontsString()+">> >>  /Contents "+
+      return (AnsiString)"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+int(Width)+" "+int(Height)+"] /Resources << /Font << "+FontsString()+">> >>  /Contents "+
        Contents->ObjectID()+" 0 R >> ";
     }
 
