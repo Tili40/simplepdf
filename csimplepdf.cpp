@@ -2,6 +2,7 @@
   CSimplePdf - class for created simple .pdf files for Borland C Builder 6.0
   https://github.com/podoroges/simplepdf
 
+  27 Feb 18 - added Rotate for CSimplePdf::CPage
   26 Feb 18 - added MediaBox for CSimplePdf::CPage::AsString
   14 Mar 16 - added CSimplePdf::CPage::MultilineText
   03 Mar 16 - added CSimplePdf::CPage::ImgInline
@@ -1185,6 +1186,7 @@ int SCount(AnsiString st,AnsiString sample){
     Justify = 1;
     FontSize = 1;
     Compress = 1;
+    FontGray = 0;
     CCat * c = new CSimplePdf::CCat(this);
     Objects.push_back(c);
     CPages * p = new CSimplePdf::CPages(this);
@@ -1250,7 +1252,6 @@ int SCount(AnsiString st,AnsiString sample){
     _out(ms,"%%EOF");
     TFileStream * fs = new TFileStream(fname,fmCreate);
     fs->CopyFrom(ms,0);
-//    fs->Write(buffer.c_str(),buffer.Length());
     delete fs;
     delete ms;
   }
@@ -1284,6 +1285,21 @@ int SCount(AnsiString st,AnsiString sample){
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q %.2f w %.2f %.2f m %.2f %.2f l S Q\n",parent->LineWidth,x1,y1,x2,y2);
     }
+    void CSimplePdf::CPage::Cubic(double x1,double y1,double x2,double y2,double x3,double y3){
+      Contents->Contents = (AnsiString)Contents->Contents
+        +AnsiString().sprintf("q %.2f w %.2f %.2f %.2f %.2f %.2f %.2f c Q\n",parent->LineWidth,x1,y1,x2,y2,x3,y3);
+    }
+    void CSimplePdf::CPage::Custom(AnsiString st){
+      Contents->Contents = (AnsiString)Contents->Contents
+        +st;
+    }
+    void CSimplePdf::CPage::Dash(AnsiString st){
+      if(st==AnsiString(""))
+        st = "[] 0";
+      Contents->Contents = (AnsiString)Contents->Contents
+        +st+" d\n";
+    }
+
 
 
     void CSimplePdf::CPage::ImgInline(AnsiString fname,double x1,double y1){
@@ -1341,7 +1357,7 @@ as single-byte or multiple-byte character codes.
       }
 
       Contents->Contents = (AnsiString)Contents->Contents
-        +AnsiString().sprintf("q BT 0 0 0 rg /%s %i Tf %.2f %.2f Td ( ",parent->CurrentFont.c_str(),parent->FontSize,x1,y1)+st.SubString(1,len)+" ) Tj ET Q\n";
+        +AnsiString().sprintf("q BT 0 0 0 rg /%s %i Tf %.2f %.2f Td 0 Tr %.3f g ( ",parent->CurrentFont.c_str(),parent->FontSize,x1,y1,parent->FontGray)+st.SubString(1,len)+" ) Tj ET Q\n";
     }
 
     int CSimplePdf::CPage::MultilineText(double x1,double y1,AnsiString st,double w, double h){
@@ -1396,9 +1412,39 @@ as single-byte or multiple-byte character codes.
       return y1;
     }
 
+/*  [G] Set the stroking colour space to DeviceGray (or the DefaultGray colour
+space; see 8.6.5.6, "Default Colour Spaces") and set the gray level to use
+for stroking operations. gray shall be a number between 0.0 (black) and
+1.0 (white).*/
+    void CSimplePdf::CPage::SetGrayStroking(double G){
+      Contents->Contents = (AnsiString)Contents->Contents
+        +G+" G\n";
+    }
+    void CSimplePdf::CPage::SetGrayNonStroking(double G){
+      Contents->Contents = (AnsiString)Contents->Contents
+        +G+" g\n";
+    }
+    void CSimplePdf::CPage::LineTo(double x1,double y1){
+      Contents->Contents = (AnsiString)Contents->Contents
+        +x1+" "+y1+" l\n";
+    }
+    void CSimplePdf::CPage::MoveTo(double x1,double y1){
+      Contents->Contents = (AnsiString)Contents->Contents
+        +x1+" "+y1+" m\n";
+    }
+    void CSimplePdf::CPage::Stroke(){
+      Contents->Contents = (AnsiString)Contents->Contents
+        +"S\n";
+    }
+    void CSimplePdf::CPage::Fill(){
+      Contents->Contents = (AnsiString)Contents->Contents
+        +"f\n";
+    }
+
 
     AnsiString CSimplePdf::CPage::AsString(){
-      return (AnsiString)"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+int(Width)+" "+int(Height)+"] /Resources << /Font << "+FontsString()+">> >>  /Contents "+
+      return (AnsiString)"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+int(Width)+" "+int(Height)+"]"
+      +(Rotate>0?AnsiString((AnsiString)" /Rotate "+Rotate):AnsiString(""))+" /Resources << /Font << "+FontsString()+">> >>  /Contents "+
        Contents->ObjectID()+" 0 R >> ";
     }
 
@@ -1417,3 +1463,85 @@ as single-byte or multiple-byte character codes.
       }
       return w*FontSize/1000;
     }
+
+
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+AnsiString ExtractString1(AnsiString source,AnsiString start,AnsiString end){
+  if(!source.Pos(start))return "";
+  source = source.Delete(1,source.Pos(start)+start.Length()-1);
+  if(!source.Pos(end))return source;
+  source = source.Delete(source.Pos(end),source.Length());
+  return source;
+}
+
+/*
+
+  CSimplePdf::Decompress - decompression of /FlateDecode portions of .pdf
+  For quick examining of contents of file.
+  
+  Usage example:
+
+  CSimplePdf * pdf = new CSimplePdf();
+  pdf->Decompress("C:\\Temp\\simplepdf-master\\5647_LP_LZIB-ORBI_An-124.pdf","C:\\Temp\\simplepdf-master\\5647_LP_LZIB-ORBI_An-124.pd_");
+  delete pdf;
+
+*/
+    void CSimplePdf::Decompress(AnsiString fname1,AnsiString fname2){
+      TFileStream * fs1 = new TFileStream(fname1,fmOpenRead);
+      TFileStream * fs2 = new TFileStream(fname2,fmCreate);
+      const int buflen = 1024;
+      char buf[buflen];
+      int run = 1;
+      while(run){
+        int len = MIN(fs1->Size-fs1->Position,buflen);
+        if(len<1){
+          run = 0;
+        }
+        else{
+          int CheckPoint = fs1->Position;
+          fs1->Read(buf,len);
+          char * ptr = (char*)memchr(buf,'\n',len);
+          if(ptr){
+            int line = ptr - (char*)&buf+1;
+            fs1->Position = CheckPoint+line;
+            AnsiString st = AnsiString(buf,line);
+            if(st.Pos("/FlateDecode")&&st.Pos("/Length")){
+              int comp = ExtractString1(st,"/Length","/").Trim().ToIntDef(0);
+              if(!comp)
+                comp = ExtractString1(st,"/Length",">").Trim().ToIntDef(0);
+              fs2->Write(buf,line);
+              //
+              char * src = (char*)malloc(comp);
+              fs1->Read(src,comp);
+              unsigned long ucblen = comp*5;// good guess
+              char * ucb = (char*)malloc(ucblen);
+              uncompress(ucb,&ucblen,src,comp);
+              AnsiString st1 = "[START]\n";
+              fs2->Write(st1.c_str(),st1.Length());
+
+              fs2->Write(ucb,ucblen);
+              //fs2->Write(src,comp);
+              st1 = "\n[FINISH]\n";
+              fs2->Write(st1.c_str(),st1.Length());
+
+              free(ucb);
+              free(src);
+
+
+            }
+            else{
+              fs2->Write(buf,line);
+            }
+          }
+          else{
+            fs2->Write(buf,len);
+          }
+        }
+      }
+
+
+      delete fs2;
+      delete fs1;
+    }
+

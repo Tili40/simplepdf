@@ -64,31 +64,45 @@ class CSimplePdf{
     public:
     CPageContents * Contents;
     double Width, Height;
-    CPage(double W,double H,CSimplePdf * p):Width(W),Height(H){parent = p;}
+    CPage(double W,double H,CSimplePdf * p):Width(W),Height(H){parent = p;Rotate = 0;}
     void Rect(double x1,double y1,double x2,double y2);
-    void FillRect(double x1,double y1,double x2,double y2);    
+    void SetGrayStroking(double);
+    void SetGrayNonStroking(double);
+    void FillRect(double x1,double y1,double x2,double y2);
     void Line(double x1,double y1,double x2,double y2);
+    void LineTo(double x1,double y1);
+    void MoveTo(double x1,double y1);
+    void Cubic(double x1,double y1,double x2,double y2,double x3,double y3);
+
+    void Dash(AnsiString = "");
+
+    void Stroke();
+    void Fill();
     void Text(double x1,double y1,AnsiString st,double maxwidth = -1);
+    void Custom(AnsiString st);
     int MultilineText(double x1,double y1,AnsiString st,double w = -1, double h = -1);
     void ImgInline(AnsiString,double,double);
     AnsiString AsString();
     char Type(){
       return 'P';
     }
+    int Rotate;//90
   };
   friend class CPage;
   int _GetPageCount();
   CPage * _GetPage(int index);
   void _out(TMemoryStream *,AnsiString);
   public:
+  void Decompress(AnsiString,AnsiString);
   int Compress;
   int Justify;
   double LineWidth;
   unsigned long PenColor;
   unsigned long FillColor;
+  double FontGray;
   int FontSize;
   AnsiString CurrentFont;
-  int TextWidth(AnsiString);  
+  int TextWidth(AnsiString);
   __property CPage * Page[int index] = {read=_GetPage};
   __property int PageCount = {read=_GetPageCount};
   void AddPage(double Width=612,double Height=792);
