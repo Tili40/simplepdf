@@ -7,6 +7,7 @@
   14 Mar 16 - added CSimplePdf::CPage::MultilineText
   03 Mar 16 - added CSimplePdf::CPage::ImgInline
   19 Feb 16 - added maxwidth for CSimplePdf::CPage::Text
+  23 May 19 - added CSimplePdf::CPage::RightText for right aligned text.
 
 
 */
@@ -1323,6 +1324,11 @@ int SCount(AnsiString st,AnsiString sample){
       }
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F [/AHx] ID %s EI Q\n",W,H,x1,y1,W,H,data.c_str());
+    }
+
+    void CSimplePdf::CPage::RightText(double x1,double y1,AnsiString st){
+      x1 = x1 - parent->TextWidth(st);
+      Text(x1,y1,st);
     }
 
     void CSimplePdf::CPage::Text(double x1,double y1,AnsiString st,double maxwidth){

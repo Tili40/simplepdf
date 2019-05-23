@@ -79,6 +79,8 @@ class CSimplePdf{
     void Stroke();
     void Fill();
     void Text(double x1,double y1,AnsiString st,double maxwidth = -1);
+    void RightText(double x1,double y1,AnsiString st);
+
     void Custom(AnsiString st);
     int MultilineText(double x1,double y1,AnsiString st,double w = -1, double h = -1);
     void ImgInline(AnsiString,double,double);
