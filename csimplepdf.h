@@ -70,6 +70,9 @@ class CSimplePdf{
     void SetGrayNonStroking(double);
     void FillRect(double x1,double y1,double x2,double y2);
     void Line(double x1,double y1,double x2,double y2);
+    void LineDotted(double x1,double y1,double x2,double y2);
+
+
     void LineTo(double x1,double y1);
     void MoveTo(double x1,double y1);
     void Cubic(double x1,double y1,double x2,double y2,double x3,double y3);

@@ -2,13 +2,14 @@
   CSimplePdf - class for created simple .pdf files for Borland C Builder 6.0
   https://github.com/podoroges/simplepdf
 
+
+  18 Jun 19 - added CSimplePdf::CPage::LineDotted
+  23 May 19 - added CSimplePdf::CPage::RightText for right aligned text.
   27 Feb 18 - added Rotate for CSimplePdf::CPage
   26 Feb 18 - added MediaBox for CSimplePdf::CPage::AsString
   14 Mar 16 - added CSimplePdf::CPage::MultilineText
   03 Mar 16 - added CSimplePdf::CPage::ImgInline
   19 Feb 16 - added maxwidth for CSimplePdf::CPage::Text
-  23 May 19 - added CSimplePdf::CPage::RightText for right aligned text.
-
 
 */
 
@@ -1286,6 +1287,11 @@ int SCount(AnsiString st,AnsiString sample){
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q %.2f w %.2f %.2f m %.2f %.2f l S Q\n",parent->LineWidth,x1,y1,x2,y2);
     }
+    void CSimplePdf::CPage::LineDotted(double x1,double y1,double x2,double y2){
+      Contents->Contents = (AnsiString)Contents->Contents
+        +AnsiString().sprintf("q %.2f w 1 [1] d %.2f %.2f m %.2f %.2f l S Q\n",parent->LineWidth,x1,y1,x2,y2);
+    }
+
     void CSimplePdf::CPage::Cubic(double x1,double y1,double x2,double y2,double x3,double y3){
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q %.2f w %.2f %.2f %.2f %.2f %.2f %.2f c Q\n",parent->LineWidth,x1,y1,x2,y2,x3,y3);
@@ -1393,7 +1399,8 @@ as single-byte or multiple-byte character codes.
               AnsiString js = CurrentString.Trim();
               double jw = parent->TextWidth(StrRep(js," ",""));
               int jc = SCount(js," ")+1;
-              double jd = (w-jw)/(double(jc)-1.0);
+              double jd = 1;// div 0 protection
+              if(jc>1)jd = (w-jw)/double(jc-1);
               double jx = x1;
               for(int ji=0;ji<jc;ji++){
                 Text(jx,y1,Parm(js,ji," "));
