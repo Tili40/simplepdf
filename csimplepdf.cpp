@@ -11,6 +11,8 @@
   03 Mar 16 - added CSimplePdf::CPage::ImgInline
   19 Feb 16 - added maxwidth for CSimplePdf::CPage::Text
 
+
+
 */
 
 #include "csimplepdf.h"
@@ -1227,6 +1229,11 @@ int SCount(AnsiString st,AnsiString sample){
   void CSimplePdf::SaveToFile(AnsiString fname){
     TMemoryStream * ms = new TMemoryStream();
     _out(ms,"%PDF-1.3");
+    _out(ms,"%Ïàøà");
+	/*If a PDF file contains binary data, as most do (see 7.2, "Lexical Conventions"), the header line shall be
+immediately followed by a comment line containing at least four binary charactersâ€”that is, characters whose
+codes are 128 or greater. This ensures proper behaviour of file transfer applications that inspect data near the
+beginning of a file to determine whether to treat the file contents as text or as binary.*/
     _out(ms,"");
     for(unsigned int a=0;a<Objects.size();a++){
       Objects[a]->xref = ms->Size;
@@ -1329,7 +1336,7 @@ int SCount(AnsiString st,AnsiString sample){
         delete bmp;
       }
       Contents->Contents = (AnsiString)Contents->Contents
-        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F [/AHx] ID %s> EI Q\n",W,H,x1,y1,W,H,data.c_str());
+        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F /AHx ID %s> EI Q\n",W,H,x1,y1,W,H,data.c_str());
     }
 
     void CSimplePdf::CPage::RightText(double x1,double y1,AnsiString st){
