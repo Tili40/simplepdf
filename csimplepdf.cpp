@@ -1222,8 +1222,10 @@ int SCount(AnsiString st,AnsiString sample){
   void CSimplePdf::_out(TMemoryStream * ms,AnsiString s){
     if(s.Length()>0)
       ms->Write(s.c_str(),s.Length());
-    AnsiString eol = "\n"; // <- I know it is bullshit, sorry...
-    ms->Write(eol.c_str(),eol.Length());
+    //AnsiString eol = "\n"; // <- I know it is bullshit, sorry...
+    static const char eol = '\n';
+    //ms->Write(eol.c_str(),eol.Length());
+    ms->Write(&eol,1);
   }
 
   void CSimplePdf::SaveToFile(AnsiString fname){
@@ -1248,8 +1250,15 @@ beginning of a file to determine whether to treat the file contents as text or a
     _out(ms,(AnsiString)"0 "+(Objects.size()+1));
     _out(ms,"0000000000 65535 f ");
     for(unsigned int a=0;a<Objects.size();a++){
-      _out(ms,AnsiString().sprintf("%010d 00000 n",Objects[a]->xref));
+      _out(ms,AnsiString().sprintf("%010d 00000 n ",Objects[a]->xref));
     }
+/*
+In the xref table one of the following must be used:
+
+0x200a space + LF
+0x200d space + CR
+0x0d0a CR + LF
+*/
     _out(ms,"trailer");
     _out(ms,"<<");
     _out(ms,(AnsiString)"/Size "+Objects.size());
@@ -1336,7 +1345,7 @@ beginning of a file to determine whether to treat the file contents as text or a
         delete bmp;
       }
       Contents->Contents = (AnsiString)Contents->Contents
-        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F /AHx ID %s> EI Q\n",W,H,x1,y1,W,H,data.c_str());
+        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F [/AHx] ID %s> EI Q\n",W,H,x1,y1,W,H,data.c_str());
     }
 
     void CSimplePdf::CPage::RightText(double x1,double y1,AnsiString st){
