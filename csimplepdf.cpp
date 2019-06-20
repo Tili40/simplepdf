@@ -2,7 +2,7 @@
   CSimplePdf - class for created simple .pdf files for Borland C Builder 6.0
   https://github.com/podoroges/simplepdf
 
-
+  20 Jun 19 - fixed ImgInline EOD bug.
   18 Jun 19 - added CSimplePdf::CPage::LineDotted
   23 May 19 - added CSimplePdf::CPage::RightText for right aligned text.
   27 Feb 18 - added Rotate for CSimplePdf::CPage
@@ -1329,7 +1329,7 @@ int SCount(AnsiString st,AnsiString sample){
         delete bmp;
       }
       Contents->Contents = (AnsiString)Contents->Contents
-        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F [/AHx] ID %s EI Q\n",W,H,x1,y1,W,H,data.c_str());
+        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F [/AHx] ID %s> EI Q\n",W,H,x1,y1,W,H,data.c_str());
     }
 
     void CSimplePdf::CPage::RightText(double x1,double y1,AnsiString st){
