@@ -2,6 +2,7 @@
   CSimplePdf - class for created simple .pdf files for Borland C Builder 6.0
   https://github.com/podoroges/simplepdf
 
+  21 Jun 10 - added CSimplePdf::CPage::ImgInlineBW
   20 Jun 19 - fixed ImgInline EOD bug.
   18 Jun 19 - added CSimplePdf::CPage::LineDotted
   23 May 19 - added CSimplePdf::CPage::RightText for right aligned text.
@@ -1032,7 +1033,6 @@ int SCount(AnsiString st,AnsiString sample){
       char * src = new char[flen];
       fs->Read(src,flen);
       unsigned long l1 = compressBound(flen);
-//      unsigned long l1 = MZ_MAX(128 + (flen * 110) / 100, 128 + flen + ((flen / (31 * 1024)) + 1) * 5);
       char * buf = new char[l1];
       compress(buf,&l1,src,flen);
       TStringStream * s = new TStringStream("");
@@ -1250,7 +1250,7 @@ beginning of a file to determine whether to treat the file contents as text or a
     _out(ms,(AnsiString)"0 "+(Objects.size()+1));
     _out(ms,"0000000000 65535 f ");
     for(unsigned int a=0;a<Objects.size();a++){
-      _out(ms,AnsiString().sprintf("%010d 00000 n ",Objects[a]->xref));
+      _out(ms,AnsiString().sprintf("%010d 00000 n ",Objects[a]->xref));// space
     }
 /*
 In the xref table one of the following must be used:
@@ -1305,7 +1305,7 @@ In the xref table one of the following must be used:
     }
     void CSimplePdf::CPage::LineDotted(double x1,double y1,double x2,double y2){
       Contents->Contents = (AnsiString)Contents->Contents
-        +AnsiString().sprintf("q %.2f w 1 [1] d %.2f %.2f m %.2f %.2f l S Q\n",parent->LineWidth,x1,y1,x2,y2);
+        +AnsiString().sprintf("q %.2f w [1] 1 d %.2f %.2f m %.2f %.2f l S Q\n",parent->LineWidth,x1,y1,x2,y2);
     }
 
     void CSimplePdf::CPage::Cubic(double x1,double y1,double x2,double y2,double x3,double y3){
@@ -1346,6 +1346,26 @@ In the xref table one of the following must be used:
       }
       Contents->Contents = (AnsiString)Contents->Contents
         +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /CS /RGB /BPC 8 /F [/AHx] ID %s> EI Q\n",W,H,x1,y1,W,H,data.c_str());
+    }
+
+    void CSimplePdf::CPage::ImgInlineBW(AnsiString fname,double x1,double y1){
+      int W = 0;
+      int H = 0;
+      AnsiString data;
+      if(fname.LowerCase().Pos(".bmp")){
+        Graphics::TBitmap * bmp = new Graphics::TBitmap();
+        bmp->LoadFromFile(fname);
+        W = bmp->Width;
+        H = bmp->Height;
+
+        for(int j=0;j<H;j++)
+        for(int i=0;i<W;i++)
+          data = (AnsiString)data
+            +AnsiString().sprintf("%02x",GetRValue(bmp->Canvas->Pixels[i][j]));
+        delete bmp;
+      }
+      Contents->Contents = (AnsiString)Contents->Contents
+        +AnsiString().sprintf("q %i 0 0 %i %.2f %.2f cm BI /W %i /H %i /ColorSpace /DeviceGray /BitsPerComponent 8 /F [/AHx] ID %s> EI Q\n",W,H,x1,y1,W,H,data.c_str());
     }
 
     void CSimplePdf::CPage::RightText(double x1,double y1,AnsiString st){

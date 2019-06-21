@@ -87,6 +87,7 @@ class CSimplePdf{
     void Custom(AnsiString st);
     int MultilineText(double x1,double y1,AnsiString st,double w = -1, double h = -1);
     void ImgInline(AnsiString,double,double);
+    void ImgInlineBW(AnsiString,double,double);
     AnsiString AsString();
     char Type(){
       return 'P';
