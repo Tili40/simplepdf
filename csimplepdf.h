@@ -25,10 +25,16 @@
   by Olivier PLATHEY http://www.fpdf.org
 
   Converted to Borland C++ Builder class
-  by Podoroges http://podoroges.livejournal.com
+  by Podoroges https://github.com/podoroges
 
   Created solely for cp1251 cyrillic encoding
   Please feel free to modify it for your needs
+
+  ////////////////////////////
+
+  Tool for onlyne .PDF analysis:
+  https://www.pdf-online.com/osa/repair.aspx
+
 */
 
 #include <vcl.h>
